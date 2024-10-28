@@ -8,7 +8,7 @@
   "subobjects": [
     {
       "name": "JOB_LOG",
-      "description": "Logs for job"
+      "description": "Log for jobs"
     }
   ]
 }

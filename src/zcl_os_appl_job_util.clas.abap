@@ -11,6 +11,7 @@ CLASS zcl_os_appl_job_util DEFINITION
                                    EXPORTING jobname      TYPE cl_apj_rt_api=>ty_jobname
                                              jobcount     TYPE cl_apj_rt_api=>ty_jobcount
                                              ret_messages TYPE cl_apj_rt_api=>tt_bapiret2 .
+    CLASS-METHODS get_current_job_name RETURNING VALUE(result) TYPE cl_apj_rt_api=>ty_jobname.
 
 ENDCLASS.
 
@@ -65,6 +66,17 @@ CLASS zcl_os_appl_job_util IMPLEMENTATION.
                                                ev_jobcount          = jobcount
                                                et_message           = ret_messages ).
       CATCH cx_apj_rt cx_abap_context_info_error  INTO DATA(exp).
+        " handle exception
+    ENDTRY.
+  ENDMETHOD.
+
+  METHOD get_current_job_name.
+    TRY.
+        " Get info about the current running job
+        cl_apj_rt_api=>get_job_runtime_info( IMPORTING ev_jobname   = result
+                                                       ev_jobcount  = DATA(jobcount)
+                                                       ev_stepcount = DATA(stepcount) ).
+      CATCH cx_apj_rt.
         " handle exception
     ENDTRY.
   ENDMETHOD.

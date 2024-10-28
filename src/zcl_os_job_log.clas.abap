@@ -117,9 +117,9 @@ CLASS zcl_os_job_log IMPLEMENTATION.
       RETURN.
     ENDIF.
     TRY.
-        cl_bali_log_db=>get_instance( )->save_log( log                        = bali_log_inst ).
+        cl_bali_log_db=>get_instance( )->save_log( log                        = bali_log_inst
 *                                                   use_2nd_db_connection      =
-                                                   "assign_to_current_appl_job = abap_true ).
+                                                   assign_to_current_appl_job = abap_true ).
       CATCH cx_bali_runtime.
         " handle exception
     ENDTRY.
