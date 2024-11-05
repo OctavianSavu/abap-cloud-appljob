@@ -1,0 +1,70 @@
+managed implementation in class zbp_os_i_job_tracer unique;
+strict ( 2 );
+
+define behavior for zos_i_job_tracer //alias <alias_name>
+persistent table zos_job_tracer_h
+lock master
+authorization master ( instance )
+//etag master <field_name>
+{
+  //  create;
+  //  update;
+  delete;
+  field ( readonly, numbering : managed ) TraceUuid;
+  association _variables { create; }
+  mapping for zos_job_tracer_h
+    {
+      TraceUuid    = trace_uuid;
+      ClassName    = class_name;
+      JobCatalog   = job_catalog;
+      JobName      = job_name;
+      JobCount     = job_count;
+      JobStepcount = job_stepcount;
+      CreatedAt    = created_at;
+      CreatedBy    = created_by;
+    }
+}
+
+
+define behavior for zos_i_job_tracer_variables //alias <alias_name>
+persistent table zos_job_tracer_p
+lock dependent by _tracer
+authorization dependent by _tracer
+//etag master <field_name>
+{
+  //  update;
+  delete;
+  field ( readonly ) TraceUuid, OrderInTrace;
+  association _tracer;
+  association _content { create; }
+
+  mapping for zos_job_tracer_p
+    {
+      TraceUuid       = trace_uuid;
+      OrderInTrace    = order_in_trace;
+      VariableName    = variable_name;
+      VariableContent = variable_content;
+      RecordedAt      = recorded_at;
+    }
+}
+
+define behavior for ZOS_I_JOB_TRACER_content //alias <alias_name>
+persistent table zos_job_tracer_p
+lock dependent by _tracer
+authorization dependent by _tracer
+//etag master <field_name>
+{
+  //  update;
+  delete;
+  field ( readonly ) TraceUuid, OrderInTrace;
+  association _variable;
+  association _tracer;
+
+  mapping for zos_job_tracer_p
+    {
+      TraceUuid       = trace_uuid;
+      OrderInTrace    = order_in_trace;
+      VariableName    = variable_name;
+      VariableContent = variable_content;
+    }
+}

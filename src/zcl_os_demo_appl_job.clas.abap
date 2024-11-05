@@ -29,7 +29,7 @@ CLASS zcl_os_demo_appl_job IMPLEMENTATION.
 
   METHOD if_apj_rt_exec_object~execute.
     " === This is a DEMO job execution - it will execute just some dummy checks ===
-    " Set from the beginning what object/suboject and external ID you want to use for logging
+    " Set from the beginning what object/subobject and external ID you want to use for logging
     zcl_os_job_log=>set_info_for_current_session( obj  = appl_log_job-obj "'ZOS_DEMO_JOB'
                                                   sobj = appl_log_job-subobj "'JOB_LOG'
                                                   xid  = CONV #( zcl_os_appl_job_util=>get_current_job_name( ) ) ).
@@ -37,9 +37,9 @@ CLASS zcl_os_demo_appl_job IMPLEMENTATION.
     " One demo success log
     zcl_os_job_log=>log( )->add_message( severity = if_bali_constants=>c_severity_information
                                          id       = appl_log_job-msg_class
-                                         number   = '002' )->save_log( ).  " This is a demo success message.
+                                         number   = 002 )->save_log( ).  " This is a demo success message.
 
-    " I. First we want to make sure that this job is not running already
+    " === First I want to make sure that this job is not running already
     IF zcl_os_appl_job_util=>is_job_already_running( info_job-catalog ) = abap_true.
       zcl_os_job_log=>log( )->add_free_text(
           text     = |An instance of this job is already running. This will be SKIPPED!|
@@ -50,7 +50,7 @@ CLASS zcl_os_demo_appl_job IMPLEMENTATION.
     " One demo error log
     zcl_os_job_log=>log( )->add_message( severity = if_bali_constants=>c_severity_error
                                          id       = appl_log_job-msg_class
-                                         number   = '001' )->save_log( ).  " This is a demo error message. Nothing to worry about.
+                                         number   = 001 )->save_log( ).  " This is a demo error message. Nothing to worry about.
 
     " ==== Test saving structure content
     SELECT SINGLE FROM i_country
@@ -58,20 +58,41 @@ CLASS zcl_os_demo_appl_job IMPLEMENTATION.
       WHERE country = 'RO'
       INTO @DATA(structure_demo).
 
-    zcl_os_ajob_watch=>trace( )->structure( name = 'STRUCTURE_DEMO' var  = structure_demo ).
+    zcl_os_ajob_watch=>trace( )->structure( name = 'STRUCTURE_DEMO'
+                                            var  = structure_demo ).
 
     " ==== Test saving variable content
-    zcl_os_ajob_watch=>trace( )->variable( name = 'COUNTRY' var  = structure_demo-country ).
+    zcl_os_ajob_watch=>trace( )->variable( name = 'COUNTRY'
+                                           var  = structure_demo-country ).
 
     " ==== Test saving internal table content
     SELECT FROM i_country
       FIELDS *
       INTO TABLE @DATA(itab_demo).
 
-    zcl_os_ajob_watch=>trace( )->itab( name = 'INTERNAL_TABLE_DEMO' var  = itab_demo ).
+    zcl_os_ajob_watch=>trace( )->itab( name = 'INTERNAL_TABLE_DEMO'
+                                       var  = itab_demo ).
 
-    COMMIT WORK.
+    TYPES: BEGIN OF ty_list_book,
+             book_name TYPE string,
+             author    TYPE string,
+             no_pages  TYPE i,
+           END OF ty_list_book,
+           ty_list_books TYPE STANDARD TABLE OF ty_list_book WITH EMPTY KEY.
+    TYPES: BEGIN OF ty_reader,
+             reader_name    TYPE string,
+             reader_surname TYPE string,
+             list_books     TYPE ty_list_books,
+           END OF ty_reader.
 
+    DATA(reader) = VALUE ty_reader( reader_name = 'Octavian'
+                                    reader_surname = 'Savu'
+                                    list_books = VALUE #( ( book_name = 'Determined' author = 'Robert Sapolsky' no_pages = 511 )
+                                                          ( book_name = 'History of Nations' author = 'Peter Furtado' no_pages = 272 ) ) ).
+
+    zcl_os_ajob_watch=>trace( )->structure( name = 'READER' var  = reader ).
+
+    zcl_os_ajob_watch=>trace( )->persist_log( abap_true ).
   ENDMETHOD.
 
   METHOD if_oo_adt_classrun~main.

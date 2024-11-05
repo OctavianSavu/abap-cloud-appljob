@@ -30,6 +30,7 @@ CLASS zcl_os_job_log DEFINITION
     METHODS save_log.
     METHODS constructor IMPORTING !inst TYPE REF TO if_bali_log OPTIONAL.
 
+protected section.
   PRIVATE SECTION.
     TYPES: BEGIN OF ty_appl_log,
              obj      TYPE if_bali_log_filter=>ty_object,
@@ -50,34 +51,9 @@ CLASS zcl_os_job_log DEFINITION
 ENDCLASS.
 
 
-CLASS zcl_os_job_log IMPLEMENTATION.
-  METHOD log.
-    IF instance IS NOT INITIAL.
-      result = instance.
-      RETURN.
-    ENDIF.
 
-    TRY.
-        DATA(bali_log) = cl_bali_log=>create_with_header(
-                             header = cl_bali_header_setter=>create(
-                                          object      = COND #( WHEN obj IS NOT INITIAL THEN obj ELSE log_object )
-                                          subobject   = COND #( WHEN sobj IS NOT INITIAL THEN sobj ELSE log_subobject )
-                                          external_id = COND #( WHEN xid IS NOT INITIAL THEN xid ELSE external_id ) ) ).
-        result = instance  = NEW #( bali_log ).
-      CATCH cx_bali_runtime.
-        " handle exception
-    ENDTRY.
-  ENDMETHOD.
+CLASS ZCL_OS_JOB_LOG IMPLEMENTATION.
 
-  METHOD constructor.
-    bali_log_inst = inst.
-  ENDMETHOD.
-
-  METHOD set_info_for_current_session.
-    log_object = obj.
-    log_subobject = sobj.
-    external_id = xid.
-  ENDMETHOD.
 
   METHOD add_free_text.
     IF bali_log_inst IS NOT BOUND.
@@ -92,6 +68,7 @@ CLASS zcl_os_job_log IMPLEMENTATION.
     ENDTRY.
     result = me.
   ENDMETHOD.
+
 
   METHOD add_message.
     IF bali_log_inst IS NOT BOUND.
@@ -112,18 +89,11 @@ CLASS zcl_os_job_log IMPLEMENTATION.
     result = me.
   ENDMETHOD.
 
-  METHOD save_log.
-    IF bali_log_inst IS NOT BOUND.
-      RETURN.
-    ENDIF.
-    TRY.
-        cl_bali_log_db=>get_instance( )->save_log( log                        = bali_log_inst
-*                                                   use_2nd_db_connection      =
-                                                   assign_to_current_appl_job = abap_true ).
-      CATCH cx_bali_runtime.
-        " handle exception
-    ENDTRY.
+
+  METHOD constructor.
+    bali_log_inst = inst.
   ENDMETHOD.
+
 
   METHOD if_oo_adt_classrun~main.
     DATA(ext_id) = CONV if_bali_log_filter=>ty_external_id( 'DADFA4A4FB7D1EEFA493B5DE17E5CFA6' ).
@@ -140,4 +110,42 @@ CLASS zcl_os_job_log IMPLEMENTATION.
     ENDTRY.
   ENDMETHOD.
 
+
+  METHOD log.
+    IF instance IS NOT INITIAL.
+      result = instance.
+      RETURN.
+    ENDIF.
+
+    TRY.
+        DATA(bali_log) = cl_bali_log=>create_with_header(
+                             header = cl_bali_header_setter=>create(
+                                          object      = COND #( WHEN obj IS NOT INITIAL THEN obj ELSE log_object )
+                                          subobject   = COND #( WHEN sobj IS NOT INITIAL THEN sobj ELSE log_subobject )
+                                          external_id = COND #( WHEN xid IS NOT INITIAL THEN xid ELSE external_id ) ) ).
+        result = instance  = NEW #( bali_log ).
+      CATCH cx_bali_runtime.
+        " handle exception
+    ENDTRY.
+  ENDMETHOD.
+
+
+  METHOD save_log.
+    IF bali_log_inst IS NOT BOUND.
+      RETURN.
+    ENDIF.
+    TRY.
+        cl_bali_log_db=>get_instance( )->save_log( log                        = bali_log_inst
+                                                   assign_to_current_appl_job = abap_true ).
+      CATCH cx_bali_runtime.
+        " handle exception
+    ENDTRY.
+  ENDMETHOD.
+
+
+  METHOD set_info_for_current_session.
+    log_object = obj.
+    log_subobject = sobj.
+    external_id = xid.
+  ENDMETHOD.
 ENDCLASS.

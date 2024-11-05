@@ -1,0 +1,24 @@
+projection;
+strict ( 2 );
+
+define behavior for ZOS_C_JOB_TRACER //alias <alias_name>
+{
+  use delete;
+
+  use association _variables { create; }
+}
+
+define behavior for ZOS_C_JOB_TRACER_VARIABLES //alias <alias_name>
+{
+  use delete;
+
+  use association _tracer;
+  use association _content { create; }
+}
+
+define behavior for ZOS_C_JOB_TRACER_content //alias <alias_name>
+{
+
+  use association _variable;
+  use association _tracer;
+}

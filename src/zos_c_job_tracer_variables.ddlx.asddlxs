@@ -1,0 +1,61 @@
+@Metadata.layer: #CORE
+
+@UI: { headerInfo: { typeName: 'Variable',
+                     typeNamePlural: 'Variables',
+                     title: { type: #STANDARD,
+                              value: 'VariableName'
+                            },
+                     description: { value: 'VariableName' }
+                   }
+     }
+@UI.presentationVariant: [{ requestAtLeast: ['VariableName', 'OrderInTrace', 'RecordedAt'],
+                            sortOrder: [{ by: 'OrderInTrace',
+                                          direction: #ASC
+                                       }]
+
+                         }]
+annotate entity ZOS_C_JOB_TRACER_VARIABLES with
+{
+
+  @UI:{ facet: [
+                { id: 'TracerVariableContentCollection',
+                  type: #COLLECTION,
+                  label: 'Variable',
+                  position: 300,
+                  purpose: #STANDARD
+                },
+                { id: 'TracerVariableContent',
+                  type: #FIELDGROUP_REFERENCE,
+                  label: 'Variable Generic Info',
+                  parentId: 'TracerVariableContentCollection',
+                  targetQualifier: 'fgTracerVariableContent',
+                  targetElement: '_content'
+                }
+               ]
+      }
+  @UI.hidden: true
+  TraceUuid;
+
+
+  @UI:{ lineItem: [{ qualifier: 'lrTracerVariables', position: 10 }]
+      }
+  @EndUserText.label: 'Recorded order'
+  OrderInTrace;
+
+  @UI:{ lineItem: [{ qualifier: 'lrTracerVariables', position: 20 }]
+      }
+  @EndUserText.label: 'Variable name'
+  VariableName;
+
+  @UI:{ lineItem: [{ qualifier: 'lrTracerVariables', position: 30 }]
+      }
+  @EndUserText.label: 'Recorded at'
+  RecordedAt;
+
+  @UI:{ lineItem: [{ qualifier: 'lrTracerVariables', position: 40 }]
+      }
+  @EndUserText.label: 'Content'
+  @UI.hidden: true
+  VariableContent;
+
+}

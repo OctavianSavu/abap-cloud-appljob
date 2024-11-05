@@ -13,10 +13,27 @@ CLASS zcl_os_appl_job_util DEFINITION
                                              ret_messages TYPE cl_apj_rt_api=>tt_bapiret2 .
     CLASS-METHODS get_current_job_name RETURNING VALUE(result) TYPE cl_apj_rt_api=>ty_jobname.
 
+protected section.
+private section.
 ENDCLASS.
 
 
-CLASS zcl_os_appl_job_util IMPLEMENTATION.
+
+CLASS ZCL_OS_APPL_JOB_UTIL IMPLEMENTATION.
+
+
+  METHOD get_current_job_name.
+    TRY.
+        " Get info about the current running job
+        cl_apj_rt_api=>get_job_runtime_info( IMPORTING ev_jobname   = result
+                                                       ev_jobcount  = DATA(jobcount)
+                                                       ev_stepcount = DATA(stepcount) ).
+      CATCH cx_apj_rt.
+        " handle exception
+    ENDTRY.
+  ENDMETHOD.
+
+
   METHOD is_job_already_running.
     is_running = abap_false.
     TRY.
@@ -37,6 +54,8 @@ CLASS zcl_os_appl_job_util IMPLEMENTATION.
         " handle exception
     ENDTRY.
   ENDMETHOD.
+
+
   METHOD schedule_job_now.
     GET TIME STAMP FIELD DATA(now).
 
@@ -69,16 +88,4 @@ CLASS zcl_os_appl_job_util IMPLEMENTATION.
         " handle exception
     ENDTRY.
   ENDMETHOD.
-
-  METHOD get_current_job_name.
-    TRY.
-        " Get info about the current running job
-        cl_apj_rt_api=>get_job_runtime_info( IMPORTING ev_jobname   = result
-                                                       ev_jobcount  = DATA(jobcount)
-                                                       ev_stepcount = DATA(stepcount) ).
-      CATCH cx_apj_rt.
-        " handle exception
-    ENDTRY.
-  ENDMETHOD.
-
 ENDCLASS.

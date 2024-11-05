@@ -1,0 +1,29 @@
+@Metadata.layer: #CORE
+
+@UI: { headerInfo: { typeName: 'Content',
+                     typeNamePlural: 'Conetent',
+                     title: { type: #STANDARD,
+                              value: 'VariableName'
+                            },
+                     description: { value: 'VariableName' }
+                   }
+     }
+annotate entity ZOS_C_JOB_TRACER_content with
+{
+  @UI.hidden: true
+  TraceUuid; 
+
+  @UI:{ fieldGroup: [{ qualifier: 'fgTracerVariableContent', position: 10 }] }
+  @EndUserText.label: 'Order of variable added to trace'
+  OrderInTrace;
+
+  @UI:{ fieldGroup: [{ qualifier: 'fgTracerVariableContent', position: 20 }] }
+  @EndUserText.label: 'Variable Name'
+  VariableName;
+
+  @UI:{ fieldGroup: [{ qualifier: 'fgTracerVariableContent', position: 30 }] }
+  @EndUserText.label: 'Variable content'
+  @UI.hidden: true
+  VariableContent;
+
+}

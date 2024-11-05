@@ -11,15 +11,13 @@ CLASS zcl_os_ajob_watch DEFINITION
                                 var  TYPE any.
     METHODS: itab IMPORTING name TYPE string
                             var  TYPE any.
+    METHODS persist_log IMPORTING exec_commit TYPE abap_bool DEFAULT abap_false.
   PROTECTED SECTION.
   PRIVATE SECTION.
 
     CLASS-DATA instance TYPE REF TO zcl_os_ajob_watch.
-
-    DATA job_catalog TYPE cl_apj_rt_api=>ty_catalog_name.
-    DATA job_name    TYPE cl_apj_rt_api=>ty_jobname.
-    DATA job_count   TYPE cl_apj_rt_api=>ty_jobcount.
-    DATA job_stepc   TYPE i.
+    DATA: tracer_header    TYPE zos_job_tracer_h,
+          tracer_variables TYPE STANDARD TABLE OF zos_job_tracer_p WITH EMPTY KEY.
     DATA order_in_trace TYPE i.
 
     METHODS constructor.
@@ -27,76 +25,65 @@ CLASS zcl_os_ajob_watch DEFINITION
 
     METHODS add_new_watcher_line IMPORTING !name        TYPE string
                                            !var_content TYPE any.
+
 ENDCLASS.
 
 
 
-CLASS zcl_os_ajob_watch IMPLEMENTATION.
-  METHOD trace.
-    IF instance IS NOT INITIAL.
-      result = instance.
-      RETURN.
-    ENDIF.
+CLASS ZCL_OS_AJOB_WATCH IMPLEMENTATION.
 
-    instance = NEW zcl_os_ajob_watch( ).
-    result = instance.
+
+  METHOD add_new_watcher_line.
+    TRY.
+        order_in_trace += 1.
+        APPEND VALUE #( trace_uuid       = tracer_header-trace_uuid
+                        order_in_trace   = order_in_trace
+                        variable_name    = name
+                        recorded_at      = now( )
+                        variable_content = var_content ) TO me->tracer_variables.
+      CATCH cx_root.
+        " Nothing should happen==> execution is not prevented if any error happens here
+    ENDTRY.
   ENDMETHOD.
+
 
   METHOD constructor.
     TRY.
-        cl_apj_rt_api=>get_job_runtime_info(
-          IMPORTING
-            ev_catalog_name  = me->job_catalog
-            ev_jobname       = me->job_name
-            ev_jobcount      = me->job_count
-            ev_stepcount     = me->job_stepc ).
+        " ====Getting job information
+        cl_apj_rt_api=>get_job_runtime_info( IMPORTING ev_catalog_name = tracer_header-job_catalog
+                                                       ev_jobname      = tracer_header-job_name
+                                                       ev_jobcount     = tracer_header-job_count
+                                                       ev_stepcount    = DATA(stepcount) ).
+        tracer_header-job_stepcount = stepcount.
+        tracer_header-trace_uuid    = cl_system_uuid=>create_uuid_x16_static( ).
+
+        tracer_header-created_by = sy-uname.
+        tracer_header-created_at = now( ).
 
         order_in_trace = 0.
-      CATCH cx_apj_rt.
-        "handle exception
-    ENDTRY.
-  ENDMETHOD.
 
-  METHOD now.
-    GET TIME STAMP FIELD result.
-  ENDMETHOD.
+        " ==== Getting the class name
+        " The CONSTRCTOR[1] is called in static method TRACE[2] called in the JOB CLASS[3] => so we need the 3rd position in the call stack
+        DATA(call_stack) = xco_cp=>current->call_stack->full( ).
+        DATA(format) = xco_cp_call_stack=>format->adt( )->with_line_number_flavor(
+                           xco_cp_call_stack=>line_number_flavor->source ).
 
-  METHOD add_new_watcher_line.
+        DATA(searched_line) = call_stack->from->position( 3 )->to->position( 1 )->as_text( io_format = format ).
 
-    TRY.
-        me->order_in_trace += 1.
-        DATA(watcher_line) = VALUE zos_job_tracer( trace_uuid       = cl_system_uuid=>create_uuid_x16_static( )
-                                                   order_in_trace   = me->order_in_trace
-                                                   job_catalog      = me->job_catalog
-                                                   job_name         = me->job_name
-                                                   job_count        = me->job_count
-                                                   job_stepcount    = me->job_stepc
-                                                   variable_name    = name
-                                                   recorded_at      = me->now( )
-                                                   variable_content = var_content ).
+        DATA(text_table) = searched_line->get_lines( )->value.
+        IF lines( text_table ) >= 1.
+          SPLIT text_table[ 1 ] AT ' ' INTO TABLE DATA(parts).
+          tracer_header-class_name = VALUE #( parts[ 1 ] OPTIONAL ).
+        ENDIF.
 
-        INSERT zos_job_tracer FROM @watcher_line.
-
-      CATCH cx_uuid_error cx_root.
-        " handle exception
-    ENDTRY.
-
-  ENDMETHOD.
-
-  METHOD structure.
-    IF me->job_name IS INITIAL.
-      RETURN.
-    ENDIF.
-    "##TO_DO "some checks that this is a structure
-    TRY.
-        DATA(var_content) = xco_cp_json=>data->from_abap( var )->to_string( ).
-        add_new_watcher_line( name = name var_content  = var_content ).
       CATCH cx_root.
+        " Nothing should happen==> execution is not prevented if any error happens here
     ENDTRY.
   ENDMETHOD.
+
 
   METHOD itab.
-    IF me->job_name IS INITIAL.
+    IF me->tracer_header-job_name IS INITIAL.
       RETURN.
     ENDIF.
     "##TO_DO "some checks that this is an internal table
@@ -107,8 +94,50 @@ CLASS zcl_os_ajob_watch IMPLEMENTATION.
     ENDTRY.
   ENDMETHOD.
 
+
+  METHOD now.
+    GET TIME STAMP FIELD result.
+  ENDMETHOD.
+
+
+  METHOD persist_log.
+
+    INSERT zos_job_tracer_h FROM @me->tracer_header.
+    INSERT zos_job_tracer_p FROM TABLE @me->tracer_variables.
+
+    IF exec_commit = abap_true.
+      COMMIT WORK.
+    ENDIF.
+
+  ENDMETHOD.
+
+
+  METHOD structure.
+    IF me->tracer_header-job_name IS INITIAL.
+      RETURN.
+    ENDIF.
+    "##TO_DO "some checks that this is a structure
+    TRY.
+        DATA(var_content) = xco_cp_json=>data->from_abap( var )->to_string( ).
+        add_new_watcher_line( name = name var_content  = var_content ).
+      CATCH cx_root.
+    ENDTRY.
+  ENDMETHOD.
+
+
+  METHOD trace.
+    IF instance IS NOT INITIAL.
+      result = instance.
+      RETURN.
+    ENDIF.
+
+    instance = NEW zcl_os_ajob_watch( ).
+    result = instance.
+  ENDMETHOD.
+
+
   METHOD variable.
-    IF me->job_name IS INITIAL.
+    IF me->tracer_header-job_name IS INITIAL.
       RETURN.
     ENDIF.
     "##TO_DO "some checks that this is a correct variable
@@ -122,5 +151,4 @@ CLASS zcl_os_ajob_watch IMPLEMENTATION.
       CATCH cx_root.
     ENDTRY.
   ENDMETHOD.
-
 ENDCLASS.

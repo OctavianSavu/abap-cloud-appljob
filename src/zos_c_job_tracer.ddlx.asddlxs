@@ -1,0 +1,102 @@
+@Metadata.layer: #CORE
+@UI:{ headerInfo:{ description: { label: 'Job trace variables'},
+                   title: { type: #STANDARD,
+                            value: 'ClassName' },
+                   typeName: 'Job tracer variable',
+                   typeNamePlural: 'Job tracer variables'
+                 }
+    }
+annotate entity ZOS_C_JOB_TRACER with
+{
+  @UI:{
+       facet: [
+                { id: 'TracerHeaderInfoCollection',
+                  type: #COLLECTION,
+                  label: 'Job run information',
+                  position: 100,
+                  purpose: #STANDARD
+                },
+                { id: 'TracerHeaderInfoFieldGroup',
+                  type: #FIELDGROUP_REFERENCE,
+                  label: 'Job run information',
+                  parentId: 'TracerHeaderInfoCollection',
+                  position: 110,
+                  purpose: #STANDARD,
+                  targetQualifier: 'fgTracerHeaderInfo'
+                },
+                { id: 'TracerHeaderJobInfoFieldGroup',
+                  type: #FIELDGROUP_REFERENCE,
+                  label: 'Job identification',
+                  parentId: 'TracerHeaderInfoCollection',
+                  position: 120,
+                  purpose: #STANDARD,
+                  targetQualifier: 'fgTracerHeaderJobInfo'
+                },
+
+                { id: 'TracerVariablesCollection',
+                  type: #COLLECTION,
+                  label: 'Gathered variables',
+                  position: 200,
+                  purpose: #STANDARD
+                },
+                { id: 'TracerVariables',
+                  type: #LINEITEM_REFERENCE,
+                  label: 'Gathered variables',
+                  parentId: 'TracerVariablesCollection',
+                  position: 210,
+                  purpose: #STANDARD,
+                  targetQualifier: 'lrTracerVariables',
+                  targetElement: '_variables'
+                }
+              ],
+       hidden: true
+      }
+  TraceUuid;
+
+  @UI:{ selectionField: [{ position: 10 }],
+        lineItem: [{ position: 10 }],
+        fieldGroup: [{ qualifier: 'fgTracerHeaderInfo',
+                       position: 10 }]
+      }
+  @EndUserText.label: 'Job Class'
+  ClassName;
+
+  @UI:{ selectionField: [{ position: 20 }],
+        lineItem: [{ position: 20 }],
+        fieldGroup: [{ qualifier: 'fgTracerHeaderInfo',
+                       position: 20 }]
+      }
+  @EndUserText.label: 'Job run at'
+  CreatedAt;
+
+  @UI:{ selectionField: [{ position: 30 }],
+        lineItem: [{ position: 30 }],
+        fieldGroup: [{ qualifier: 'fgTracerHeaderInfo',
+                       position: 30 }]
+      }
+  @EndUserText.label: 'Job run by'
+  CreatedBy;
+
+  @UI:{ selectionField: [{ position: 40 }],
+        lineItem: [{ position: 40 }],
+        fieldGroup: [{ qualifier: 'fgTracerHeaderJobInfo',
+                       position: 10 }]
+      }
+  @EndUserText.label: 'Job catalog'
+  JobCatalog;
+
+  @UI:{ selectionField: [{ position: 40 }],
+        lineItem: [{ position: 40 }],
+        fieldGroup: [{ qualifier: 'fgTracerHeaderJobInfo',
+                       position: 20 }]
+      }
+  @EndUserText.label: 'Job name - ID'
+  JobName;
+
+  @UI:{ lineItem: [{ position: 50 }],
+        fieldGroup: [{ qualifier: 'fgTracerHeaderJobInfo',
+                       position: 30 }]
+      }
+  @EndUserText.label: 'Job count'
+  JobCount;
+}

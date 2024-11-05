@@ -1,0 +1,6 @@
+@EndUserText.label: 'Job tracer information'
+define service Zos_job_tracer {
+  expose ZOS_C_JOB_TRACER           as JobTracer;
+  expose ZOS_C_JOB_TRACER_VARIABLES as JobTracerVariables;
+  expose ZOS_C_JOB_TRACER_content   as JobTracerContent;
+}
